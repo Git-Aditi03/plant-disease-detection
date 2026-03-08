@@ -1,14 +1,6 @@
-<<<<<<< HEAD
-streamlit==1.33.0
-tensorflow-cpu==2.15.0
-numpy==1.26.4
-pillow==10.2.0
-h5py==3.10.0
-=======
-streamlit==1.33.0
-tensorflow-cpu==2.15.0
-numpy==1.26.4
-pillow==10.2.0
-h5py==3.10.0
->>>>>>> e8ec34b168a8a9d07520844808a313992e1fad90
-protobuf==4.25.3
+streamlit
+tensorflow
+numpy
+pillow
+keras
+h5py
