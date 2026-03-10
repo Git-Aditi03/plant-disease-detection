@@ -1,79 +1,89 @@
 import streamlit as st
+import tensorflow as tf
 import numpy as np
-from tensorflow.keras.models import load_model
 from PIL import Image
 
-# Page configuration
-st.set_page_config(page_title="Plant Disease Detection", layout="centered")
+# -----------------------------
+# Page Configuration
+# -----------------------------
+st.set_page_config(
+    page_title="Plant Disease Detection",
+    page_icon="🌿",
+    layout="centered"
+)
 
+# -----------------------------
+# Title
+# -----------------------------
 st.title("🌿 Plant Disease Detection System")
-st.write("Upload a plant leaf image and the model will detect the disease.")
+st.write("Upload a plant leaf image and the model will predict the disease.")
 
-# Load trained model
-model = load_model("plant_disease_model_final.keras")
+# -----------------------------
+# Load Model (cached)
+# -----------------------------
+@st.cache_resource
+def load_model():
+    model = tf.keras.models.load_model("plant_disease_model_final.keras")
+    return model
 
-# Disease classes (edit according to your dataset)
-classes = [
+model = load_model()
+
+# -----------------------------
+# Class Labels (EDIT if needed)
+# -----------------------------
+class_names = [
     "Apple Scab",
     "Apple Black Rot",
     "Apple Cedar Rust",
-    "Healthy Leaf"
+    "Healthy"
 ]
 
-# Disease descriptions
-descriptions = {
-    "Apple Scab": "A fungal disease causing dark lesions on leaves.",
-    "Apple Black Rot": "Causes black rot spots on apple leaves and fruit.",
-    "Apple Cedar Rust": "Fungal infection producing yellow-orange spots.",
-    "Healthy Leaf": "The plant leaf is healthy."
-}
-
-# Treatment suggestions
-treatments = {
-    "Apple Scab": "Use fungicide and remove infected leaves.",
-    "Apple Black Rot": "Prune infected branches and apply fungicide.",
-    "Apple Cedar Rust": "Remove nearby cedar trees and spray fungicide.",
-    "Healthy Leaf": "No treatment needed. Maintain proper plant care."
-}
-
-# Image preprocessing
-def preprocess_image(image):
-    image = image.resize((224, 224))
-    img = np.array(image)
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
-    return img
-
-# Upload image
+# -----------------------------
+# Image Upload
+# -----------------------------
 uploaded_file = st.file_uploader(
     "Upload a leaf image",
     type=["jpg", "jpeg", "png"]
 )
 
+# -----------------------------
+# Image Preprocessing
+# -----------------------------
+def preprocess_image(image):
+    image = image.resize((224, 224))
+    img_array = np.array(image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    return img_array
+
+# -----------------------------
+# Prediction
+# -----------------------------
 if uploaded_file is not None:
 
     image = Image.open(uploaded_file)
 
-    st.image(image, caption="Uploaded Leaf Image", use_column_width=True)
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    if st.button("🔍 Predict Disease"):
+    if st.button("Predict Disease"):
 
-        img = preprocess_image(image)
+        with st.spinner("Analyzing image..."):
 
-        prediction = model.predict(img)
+            processed_image = preprocess_image(image)
 
-        index = np.argmax(prediction)
+            prediction = model.predict(processed_image)
 
-        confidence = np.max(prediction)
+            predicted_class = class_names[np.argmax(prediction)]
 
-        disease = classes[index]
+            confidence = np.max(prediction) * 100
 
-        st.success(f"Prediction: {disease}")
+        st.success("Prediction Complete")
 
-        st.info(f"Confidence: {confidence*100:.2f}%")
+        st.subheader("🩺 Prediction Result")
+        st.write("Disease:", predicted_class)
+        st.write(f"Confidence: {confidence:.2f}%")
 
-        st.subheader("📖 Disease Description")
-        st.write(descriptions[disease])
-
-        st.subheader("💊 Treatment Suggestion")
-        st.write(treatments[disease])
+# -----------------------------
+# Footer
+# -----------------------------
+st.markdown("---")
+st.write("Developed for Plant Disease Detection using Deep Learning")
