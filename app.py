@@ -1,57 +1,79 @@
 import streamlit as st
 import numpy as np
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 from PIL import Image
 
 # Page configuration
 st.set_page_config(page_title="Plant Disease Detection", layout="centered")
 
-st.title("🌿 Plant Disease Detection")
-st.write("Upload a leaf image to detect plant disease")
+st.title("🌿 Plant Disease Detection System")
+st.write("Upload a plant leaf image and the model will detect the disease.")
 
-# Load model
-@st.cache_resource
-def load_trained_model():
-    model = load_model("model.h5")
-    return model
+# Load trained model
+model = load_model("plant_disease_model_final.keras")
 
-model = load_trained_model()
-
-# Example class labels (edit according to your dataset)
-class_names = [
+# Disease classes (edit according to your dataset)
+classes = [
     "Apple Scab",
     "Apple Black Rot",
     "Apple Cedar Rust",
     "Healthy Leaf"
 ]
 
+# Disease descriptions
+descriptions = {
+    "Apple Scab": "A fungal disease causing dark lesions on leaves.",
+    "Apple Black Rot": "Causes black rot spots on apple leaves and fruit.",
+    "Apple Cedar Rust": "Fungal infection producing yellow-orange spots.",
+    "Healthy Leaf": "The plant leaf is healthy."
+}
+
+# Treatment suggestions
+treatments = {
+    "Apple Scab": "Use fungicide and remove infected leaves.",
+    "Apple Black Rot": "Prune infected branches and apply fungicide.",
+    "Apple Cedar Rust": "Remove nearby cedar trees and spray fungicide.",
+    "Healthy Leaf": "No treatment needed. Maintain proper plant care."
+}
+
 # Image preprocessing
 def preprocess_image(image):
     image = image.resize((224, 224))
-    img_array = np.array(image)
-    img_array = img_array / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-    return img_array
+    img = np.array(image)
+    img = img / 255.0
+    img = np.expand_dims(img, axis=0)
+    return img
 
-# File uploader
+# Upload image
 uploaded_file = st.file_uploader(
-    "Upload a plant leaf image",
+    "Upload a leaf image",
     type=["jpg", "jpeg", "png"]
 )
 
 if uploaded_file is not None:
 
     image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    if st.button("Predict Disease"):
+    st.image(image, caption="Uploaded Leaf Image", use_column_width=True)
 
-        processed_image = preprocess_image(image)
+    if st.button("🔍 Predict Disease"):
 
-        prediction = model.predict(processed_image)
+        img = preprocess_image(image)
 
-        predicted_class = np.argmax(prediction)
+        prediction = model.predict(img)
+
+        index = np.argmax(prediction)
+
         confidence = np.max(prediction)
 
-        st.success(f"Prediction: {class_names[predicted_class]}")
+        disease = classes[index]
+
+        st.success(f"Prediction: {disease}")
+
         st.info(f"Confidence: {confidence*100:.2f}%")
+
+        st.subheader("📖 Disease Description")
+        st.write(descriptions[disease])
+
+        st.subheader("💊 Treatment Suggestion")
+        st.write(treatments[disease])
